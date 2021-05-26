@@ -31,6 +31,19 @@ def add_parcel(mydb):
         print("Wrong values")
 
 
+def find_couriers_from_city(mydb, city):
+    mycursor = mydb.cursor()
+    sql = "SELECT KurierID FROM dostawy.kurierzy WHERE CzyDostepny = 1 AND Miasto = %s;"
+    mycursor.execute(sql, city)
+    myresult = mycursor.fetchone()
+
+    if myresult is None:
+        print("there is no courier in this city")
+    else:
+        courierid = myresult[0]
+        return courierid
+
+
 def add_courier_to_parcels(mydb):
     mycursor = mydb.cursor()
 
@@ -44,85 +57,35 @@ def add_courier_to_parcels(mydb):
         print("All parcels have courier")
     else:
         for parcelID in myresult:
+
             sql = "SELECT MiastoDostarczenia FROM dostawy.przesylki WHERE PrzesylkaID = %s;"
             id = parcelID[0]
             mycursor.execute(sql, (id,))
-            city=mycursor.fetchone()
+            city = mycursor.fetchone()
 
+            courierID = find_couriers_from_city(mydb, city)
 
-            #city=str(city)
+            if courierID is None:
+                print("cannot add courier to this parcel")
+            else:
 
-            print(parcelID)
-            print(city)
+                sql = "UPDATE dostawy.przesylki SET Kurier = %s  WHERE PrzesylkaID = %s ;"
+                values = (courierID, id)
+                mycursor.execute(sql, values)
 
-            print(type(city))
+                print(courierID)
 
+                sql = "UPDATE dostawy.kurierzy SET CzyDostepny = false  WHERE KurierID = %s ;"
+                mycursor.execute(sql, (courierID,))
 
-
-
-            courierID=find_couriers_from_city(mydb,city)
-            print(courierID)
-
-            city2=('Poznań',)
-            print(type(city2))
-
-
-
-
-
-
-            #
-            # print(city)
-
-            # courierID=find_couriers_from_city(mydb,city2)
-            #
-            #
-            # print(courierID)
-
-            #sql = "UPDATE dostawy.przesylki SET Kurier = %s  WHERE PrzesylkaID = %s ;"
-            # mycursor.execute(sql,(),(id,))
-
-
-    #
-    # sql = "SELECT MiastoDostarczenia FROM dostawy.przesylki WHERE PrzesylkaID = %s;"
-    # id = listOfParcels[0][1]
-    # print(id)
-    # mycursor.execute(sql, (id,))
-    # myresult = mycursor.fetchone()
-    # city = str(myresult[0])
-
-    # sql = "UPDATE dostawy.przesylki SET Kurier = %s  WHERE PrzesylkaID = %s ;"
-    #
-    # city = (city,)
-    #
-    # mycursor.execute(sql, city)
+                mydb.commit()
+                print("courier added to parcel")
 
     mycursor.close()
 
 
-
-def find_couriers_from_city(mydb, city):
-    print("typet")
-    print(type(city))
-
-
-    mycursor = mydb.cursor()
-
-    sql = "SELECT KurierID FROM dostawy.kurierzy WHERE CzyDostepny = 1 AND Miasto = %s;"
-    # city = (city,)
-
-    mycursor.execute(sql, city)
-
-    myresult = mycursor.fetchone()
-
-    print(myresult[0])
-    courierid = myresult[0]
-
-    if myresult is None:
-        print("there is no courier in this city")
-    else:
-        return courierid
-
+def confirm_pickup(mydb):
+    print("pickup confrimed")
 
 def main():
     import mysql.connector
@@ -133,18 +96,15 @@ def main():
         password="password"
     )
 
-    # printDB(mydb)
-    #
     # addParcel(mydb)
-    #
+
     # printDB(mydb)
 
-    #city=("Opole",)
-    #print(type(city))
-    #find_couriers_from_city(mydb, city)
+    # find_couriers_from_city(mydb, city)
 
-    add_courier_to_parcels(mydb)
+    #add_courier_to_parcels(mydb)
 
+    confirm_pickup(mydb)
 
 if __name__ == '__main__':
     main()
