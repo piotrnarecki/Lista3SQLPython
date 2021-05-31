@@ -1,5 +1,19 @@
+from datetime import datetime
+from datetime import datetime as datetime2
+from time import strptime
+
 import mysql
 from _mysql_connector import MySQLInterfaceError
+from pip._vendor.distlib.compat import raw_input
+
+
+def get_db(user, password):
+    mydb = mysql.connector.connect(
+        host="127.0.0.1",
+        user=user,
+        password=password
+    )
+    return mydb
 
 
 def print_db(mydb):
@@ -14,21 +28,38 @@ def print_db(mydb):
 
 
 def add_parcel(mydb):
-    mycursor = mydb.cursor()
+    print('send the parcel')
+    sender = str(raw_input('enter sender name '))
+    date = str(datetime.today().strftime('%Y-%m-%d'))
+    city = str(raw_input('enter city of delivery '))
 
-    sql = "INSERT INTO dostawy.przesylki (Nadawca,DataNadania, MiastoDostarczenia, Kurier, DataDostarczenia) VALUES (" \
-          "%s, %s, %s,%s, %s) "
-    val = ("Andrzej Testowy", "2021-04-20", "Wroclaw", "55", "2021-04-27")
+    if sender.isdigit():
+        print('name can not be a number')
+    elif city.isdigit():
+        print('city can not be a number')
+    else:
+        print(sender)
+        print(date)
+        print(city)
 
-    try:
+        mycursor = mydb.cursor()
+
+        sql = "INSERT INTO dostawy.przesylki (Nadawca,DataNadania, MiastoDostarczenia, Kurier, DataDostarczenia) VALUES (" \
+              "%s, %s, %s,%s, %s) "
+        val = (sender, date, city, None, None)
+
         try:
-            mycursor.execute(sql, val)
-            mydb.commit()
-            print(mycursor.rowcount, "record inserted.")
-        except mysql.connector.errors.IntegrityError:  # sprawdza czy foreign key istnieje
-            print("Cannot add this thing to DB")
-    except mysql.connector.errors.DatabaseError:  # sprawdza czy dodawane wartosci sa wlasciwego typu
-        print("Wrong values")
+            try:
+                mycursor.execute(sql, val)
+                mydb.commit()
+
+                print(mycursor.rowcount, "record inserted.")
+            except mysql.connector.errors.IntegrityError:  # sprawdza czy foreign key istnieje
+                print("Cannot add this thing to DB")
+        except mysql.connector.errors.DatabaseError:  # sprawdza czy dodawane wartosci sa wlasciwego typu
+            print("Wrong values")
+
+        mycursor.close
 
 
 def find_couriers_from_city(mydb, city):
@@ -54,7 +85,7 @@ def add_courier_to_parcels(mydb):
     myresult = mycursor.fetchall()
 
     if myresult is None:
-        print("All parcels have courier")
+        print("all parcels have courier")
     else:
         for parcelID in myresult:
 
@@ -66,7 +97,7 @@ def add_courier_to_parcels(mydb):
             courierID = find_couriers_from_city(mydb, city)
 
             if courierID is None:
-                print("cannot add courier to this parcel")
+                print("there is no couriers in this city")
             else:
 
                 sql = "UPDATE dostawy.przesylki SET Kurier = %s  WHERE PrzesylkaID = %s ;"
@@ -85,26 +116,124 @@ def add_courier_to_parcels(mydb):
 
 
 def confirm_pickup(mydb):
-    print("pickup confrimed")
+    import datetime
+
+    print("confirm pickup ")
+    parcel_id = str(raw_input('enter parcel id '))
+
+    if parcel_id.isdigit():
+        print(parcel_id)
+
+        mycursor = mydb.cursor()
+
+        sql = "SELECT * FROM dostawy.przesylki WHERE PrzesylkaID = %s AND Kurier IS NOT NULL ;"
+
+        mycursor.execute(sql, (parcel_id,))
+
+        myresult = mycursor.fetchone()
+
+        mycursor.close
+
+        if myresult is None:
+            print('there is no parcel with id ' + parcel_id)
+        else:
+            shipment_date = myresult[2]
+            print(shipment_date)
+
+            pickup_date = myresult[5]
+            if pickup_date is None:
+                today = str(datetime2.today().strftime('%Y-%m-%d'))
+                pickup_date = datetime2.strptime(today, '%Y-%m-%d').date()
+
+                print(pickup_date)
+
+                time_between = pickup_date - shipment_date
+                print(time_between)
+                if time_between > datetime.timedelta(days=1):  # sprawdza czy paczka zostala wyslana przed odbiorem
+                    pickup_date = str(pickup_date)
+                    mycursor = mydb.cursor()
+
+                    sql = "UPDATE dostawy.przesylki SET DataDostarczenia = %s  WHERE PrzesylkaID = %s;"
+                    mycursor.execute(sql, (pickup_date, parcel_id))
+
+                    mydb.commit()
+
+                    print('pickup confirmed')
+
+                else:
+                    print("pickup date should be after shipment date")
+
+
+            else:
+                print('the parcel has been delivered on ' + str(pickup_date))
+
+
+    else:
+        print('parcel id is a number')
+
+
+def check_status(mydb, parcel_id):
+    print("check parcel status")
+    parcel_id = str(raw_input('enter parcel id '))
+
+    if parcel_id.isdigit():
+
+        mycursor = mydb.cursor()
+
+        sql = "SELECT * FROM dostawy.przesylki WHERE PrzesylkaID = %s"
+
+        mycursor.execute(sql, (parcel_id,))
+
+        myresult = mycursor.fetchone()
+
+        mycursor.close
+
+        if myresult is None:
+            print('there is no parcel with id ' + parcel_id)
+        else:
+            print(myresult)
+
+            parcel_id = myresult[0]
+            sender = myresult[1]
+            shipment_date = myresult[2]
+            city = myresult[3]
+            courier_id = myresult[4]
+            pickup_date = myresult[5]
+
+            # istnieje
+            if (parcel_id is not None) & (courier_id is None):
+                print('parcel with id ' + str(parcel_id) + " exist")
+
+            # nadana
+            if (shipment_date is not None) & (courier_id is not None) & (pickup_date is None):
+                print('parcel with id ' + str(parcel_id) + ' posted')
+
+            #dostarczona
+            if (shipment_date is not None) & (courier_id is not None) & (pickup_date is not None):
+                print('parcel with id ' + str(parcel_id) + ' has been delivered')
+
+
+    else:
+        print('parcel id is a number')
+
 
 def main():
     import mysql.connector
 
-    mydb = mysql.connector.connect(
-        host="127.0.0.1",
-        user="root",
-        password="password"
-    )
+    mydb = get_db("root", "password")
 
-    # addParcel(mydb)
+    # dodawanie przesylki
+    # add_parcel(mydb)
 
-    # printDB(mydb)
+    # przydzielanie kurierow do przesylek
+    # add_courier_to_parcels(mydb)
 
-    # find_couriers_from_city(mydb, city)
+    # potwierdzanie odbioru
+    # confirm_pickup(mydb)
 
-    #add_courier_to_parcels(mydb)
+    # sprawdzanie statusu przesyłki
+    check_status(mydb, 1)
 
-    confirm_pickup(mydb)
 
 if __name__ == '__main__':
     main()
