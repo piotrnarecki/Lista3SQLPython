@@ -219,6 +219,39 @@ def check_status(mydb):
 
 def filter_by_sender(mydb):
     print('sender')
+    name = str(raw_input('enter sender name '))
+
+    if name.isdigit():
+        print('name cannot be a number')
+    else:
+        try:
+            mycursor = mydb.cursor()
+
+            sql = "SELECT * FROM dostawy.przesylki WHERE Nadawca = %s"
+
+            mycursor.execute(sql, (name,))
+
+            myresult = mycursor.fetchall()
+
+            mycursor.close
+
+            if len(myresult) > 0:
+                print('there is ' + str(len(myresult)) + ' result(s):')
+
+                for result in myresult:
+                    print(result)
+
+
+            else:
+                print('there is no parcels with sender ' + name)
+
+
+
+
+
+
+        except ValueError:
+            print('DB problem')
 
 
 def filter_by_city(mydb):
