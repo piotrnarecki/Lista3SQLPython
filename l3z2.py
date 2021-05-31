@@ -172,7 +172,7 @@ def confirm_pickup(mydb):
         print('parcel id is a number')
 
 
-def check_status(mydb, parcel_id):
+def check_status(mydb):
     print("check parcel status")
     parcel_id = str(raw_input('enter parcel id '))
 
@@ -208,13 +208,48 @@ def check_status(mydb, parcel_id):
             if (shipment_date is not None) & (courier_id is not None) & (pickup_date is None):
                 print('parcel with id ' + str(parcel_id) + ' posted')
 
-            #dostarczona
+            # dostarczona
             if (shipment_date is not None) & (courier_id is not None) & (pickup_date is not None):
                 print('parcel with id ' + str(parcel_id) + ' has been delivered')
 
 
     else:
         print('parcel id is a number')
+
+
+def filter_by_sender(mydb):
+    print('sender')
+
+
+def filter_by_city(mydb):
+    print('city')
+
+
+def filter_by_shipment_date(mydb):
+    print('shipment date')
+
+
+def filter_parcels(mydb):
+    print('filter parcels by')
+    print('1 - sender')
+    print('2 - city')
+    print('3 - shipment date')
+
+    try:
+        mode = int(raw_input('enter mode '))
+        print(mode)
+
+        if mode == 1:
+            filter_by_sender(mydb)
+        elif mode == 2:
+            filter_by_city(mydb)
+        elif mode == 3:
+            filter_by_shipment_date(mydb)
+        else:
+            print('mode is an integer between 1 and 3')
+
+    except ValueError:
+        print('mode should be a integer')
 
 
 def main():
@@ -232,7 +267,10 @@ def main():
     # confirm_pickup(mydb)
 
     # sprawdzanie statusu przesyłki
-    check_status(mydb, 1)
+    # check_status(mydb)
+
+    # filtrowanie
+    filter_parcels(mydb)
 
 
 if __name__ == '__main__':
