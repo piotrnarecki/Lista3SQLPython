@@ -1,9 +1,6 @@
 from datetime import datetime
 from datetime import datetime as datetime2
-from time import strptime
-
 import mysql
-from _mysql_connector import MySQLInterfaceError
 from pip._vendor.distlib.compat import raw_input
 
 
@@ -218,7 +215,6 @@ def check_status(mydb):
 
 
 def filter_by_sender(mydb):
-    print('sender')
     name = str(raw_input('enter sender name '))
 
     if name.isdigit():
@@ -241,25 +237,79 @@ def filter_by_sender(mydb):
                 for result in myresult:
                     print(result)
 
-
             else:
                 print('there is no parcels with sender ' + name)
 
 
-
-
-
-
-        except ValueError:
+        except mysql.connector.errors.DatabaseError:
             print('DB problem')
 
 
 def filter_by_city(mydb):
-    print('city')
+    city = str(raw_input('enter city '))
+
+    if city.isdigit():
+        print('city cannot be a number')
+    else:
+        try:
+            mycursor = mydb.cursor()
+
+            sql = "SELECT * FROM dostawy.przesylki WHERE MiastoDostarczenia = %s"
+
+            mycursor.execute(sql, (city,))
+
+            myresult = mycursor.fetchall()
+
+            mycursor.close
+
+            if len(myresult) > 0:
+                print('there is ' + str(len(myresult)) + ' result(s):')
+
+                for result in myresult:
+                    print(result)
+
+            else:
+                print('there is no parcels for ' + city)
+
+
+        except mysql.connector.errors.DatabaseError:
+            print('DB problem')
 
 
 def filter_by_shipment_date(mydb):
-    print('shipment date')
+    date = str(raw_input('enter shipment date YYYY-MM-DD '))
+
+    try:
+
+        shipment_date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y-%m-%d")
+
+        try:
+            mycursor = mydb.cursor()
+
+            sql = "SELECT * FROM dostawy.przesylki WHERE DataNadania >= %s"
+
+            mycursor.execute(sql, (shipment_date,))
+
+            myresult = mycursor.fetchall()
+
+            mycursor.close
+
+            if len(myresult) > 0:
+                print('there is ' + str(len(myresult)) + ' result(s):')
+
+                for result in myresult:
+                    print(result)
+
+            else:
+                print('there is no parcels posted after ' + shipment_date)
+
+
+        except mysql.connector.errors.DatabaseError:
+            print('DB problem')
+
+    except ValueError:
+        print('wrong date')
+        print('correct format  YYYY-MM-DD')
 
 
 def filter_parcels(mydb):
@@ -270,7 +320,6 @@ def filter_parcels(mydb):
 
     try:
         mode = int(raw_input('enter mode '))
-        print(mode)
 
         if mode == 1:
             filter_by_sender(mydb)
