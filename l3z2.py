@@ -13,17 +13,6 @@ def get_db(user, password):
     return mydb
 
 
-def print_db(mydb):
-    mycursor = mydb.cursor()
-
-    mycursor.execute("SELECT * FROM dostawy.przesylki;")
-
-    myresult = mycursor.fetchall()
-
-    for x in myresult:
-        print(x)
-
-
 def add_parcel(mydb):
     print('send the parcel')
     sender = str(raw_input('enter sender name '))
@@ -100,8 +89,6 @@ def add_courier_to_parcels(mydb):
                 sql = "UPDATE dostawy.przesylki SET Kurier = %s  WHERE PrzesylkaID = %s ;"
                 values = (courierID, id)
                 mycursor.execute(sql, values)
-
-                print(courierID)
 
                 sql = "UPDATE dostawy.kurierzy SET CzyDostepny = false  WHERE KurierID = %s ;"
                 mycursor.execute(sql, (courierID,))
@@ -340,16 +327,16 @@ def main():
     mydb = get_db("root", "password")
 
     # dodawanie przesylki
-    # add_parcel(mydb)
+    add_parcel(mydb)
 
     # przydzielanie kurierow do przesylek
-    # add_courier_to_parcels(mydb)
+    add_courier_to_parcels(mydb)
 
     # potwierdzanie odbioru
-    # confirm_pickup(mydb)
+    confirm_pickup(mydb)
 
     # sprawdzanie statusu przesyłki
-    # check_status(mydb)
+    check_status(mydb)
 
     # filtrowanie
     filter_parcels(mydb)
