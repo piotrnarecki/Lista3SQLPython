@@ -5,11 +5,19 @@ from pip._vendor.distlib.compat import raw_input
 
 
 def get_db(user, password):
-    mydb = mysql.connector.connect(
-        host="127.0.0.1",
-        user=user,
-        password=password
-    )
+    mydb = None
+    try:
+        try:
+            mydb = mysql.connector.connect(
+                host="127.0.0.1",
+                user=user,
+                password=password
+            )
+        except AttributeError:
+            print('wrong user')
+    except mysql.connector.errors.ProgrammingError:
+        print('wrong password')
+
     return mydb
 
 
@@ -41,9 +49,9 @@ def add_parcel(mydb):
 
                 print(mycursor.rowcount, "record inserted.")
             except mysql.connector.errors.IntegrityError:  # sprawdza czy foreign key istnieje
-                print("Cannot add this thing to DB")
+                print("cannot add this thing to DB")
         except mysql.connector.errors.DatabaseError:  # sprawdza czy dodawane wartosci sa wlasciwego typu
-            print("Wrong values")
+            print("wrong values")
 
         mycursor.close
 
